@@ -125,3 +125,25 @@ function resetGame() {
         setTimeout(makeAIMove, 500);
     }
 }
+function startGame(color) {
+    playerColor = color;
+    aiLevel = parseInt(document.getElementById("difficulty").value);
+    
+    document.getElementById("menu").style.display = "none";
+    document.getElementById("game").style.display = "block";
+
+    // Initialize the board with the selected orientation
+    board = Chessboard('chessboard', {
+        draggable: true,
+        position: 'start',
+        orientation: playerColor,
+        onDrop: handleMove
+    });
+
+    game = new Chess(); // Reset game state
+
+    // If playing as black, AI should make the first move
+    if (playerColor === 'black') {
+        setTimeout(makeAIMove, 500);
+    }
+        }
