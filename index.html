@@ -150,40 +150,40 @@
         <h2>High Scores</h2>
         <div id="highscore-list"></div>
     </div>
-
     <script>
-        // High Score System
-        const highScores = {
-            tictactoe: JSON.parse(localStorage.getItem('tictactoeHighScores')) || { 
-                wins: 0, 
-                losses: 0,
-                get winPercentage() {
-                    const total = this.wins + this.losses;
-                    return total > 0 ? ((this.wins / total) * 100).toFixed(1) : 0;
-                }
-            },
-            snake: JSON.parse(localStorage.getItem('snakeHighScores')) || 0,
-            memory: JSON.parse(localStorage.getItem('memoryHighScores')) || 0
-        };
+// High Score System
+const highScores = {
+    tictactoe: JSON.parse(localStorage.getItem('tictactoeHighScores')) || { 
+        wins: 0, 
+        losses: 0
+    },
+    snake: JSON.parse(localStorage.getItem('snakeHighScores')) || 0,
+    memory: JSON.parse(localStorage.getItem('memoryHighScores')) || 0
+};
 
-        function updateHighScores() {
-            const highscoreList = document.getElementById('highscore-list');
-            highscoreList.innerHTML = `
-                <h3>Tic Tac Toe</h3>
-                <p>Wins: ${highScores.tictactoe.wins}</p>
-                <p>Losses: ${highScores.tictactoe.losses}</p>
-                <p>Win %: ${highScores.tictactoe.winPercentage}%</p>
-                <h3>Snake</h3>
-                <p>High Score: ${highScores.snake}</p>
-                <h3>Memory</h3>
-                <p>Best Time: ${highScores.memory}s</p>
-            `;
-            
-            localStorage.setItem('tictactoeHighScores', JSON.stringify(highScores.tictactoe));
-            localStorage.setItem('snakeHighScores', JSON.stringify(highScores.snake));
-            localStorage.setItem('memoryHighScores', JSON.stringify(highScores.memory));
-        }
+// Calculate win percentage function
+function calculateWinPercentage(wins, losses) {
+    const total = wins + losses;
+    return total > 0 ? ((wins / total) * 100).toFixed(1) : 0;
+}
 
+function updateHighScores() {
+    const highscoreList = document.getElementById('highscore-list');
+    highscoreList.innerHTML = `
+        <h3>Tic Tac Toe</h3>
+        <p>Wins: ${highScores.tictactoe.wins}</p>
+        <p>Losses: ${highScores.tictactoe.losses}</p>
+        <p>Win %: ${calculateWinPercentage(highScores.tictactoe.wins, highScores.tictactoe.losses)}%</p>
+        <h3>Snake</h3>
+        <p>High Score: ${highScores.snake}</p>
+        <h3>Memory</h3>
+        <p>Best Time: ${highScores.memory}s</p>
+    `;
+    
+    localStorage.setItem('tictactoeHighScores', JSON.stringify(highScores.tictactoe));
+    localStorage.setItem('snakeHighScores', JSON.stringify(highScores.snake));
+    localStorage.setItem('memoryHighScores', JSON.stringify(highScores.memory));
+}
         // Game Selection
         function showGame(gameId) {
             document.querySelectorAll('.game').forEach(g => g.classList.add('hidden'));
