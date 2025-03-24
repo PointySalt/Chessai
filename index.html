@@ -196,7 +196,9 @@ select, button {
         </div>
 
         <!-- Other games -->
-        <div id="snake" class="game">
+        <div id="snake" class="game hidden">
+            Snake Game Coming Soon...
+        </div>
             <div id="memory" class="game hidden">
     <div class="memory-controls">
         <button onclick="startMemoryGame()">New Game</button>
@@ -217,7 +219,7 @@ const highScores = {
         losses: 0
     },
     snake: JSON.parse(localStorage.getItem('snakeHighScores')) || 0,
-    memory: JSON.parse(localStorage.getItem('memoryHighScores')) || 0
+    memory: JSON.parse(localStorage.getItem('memoryHighScores')) || Infinity
 };
 
 // Calculate win percentage function
@@ -225,6 +227,8 @@ function calculateWinPercentage(wins, losses) {
     const total = wins + losses;
     return total > 0 ? ((wins / total) * 100).toFixed(1) : 0;
 }
+        
+
 
 function updateHighScores() {
     const highscoreList = document.getElementById('highscore-list');
@@ -247,8 +251,10 @@ function updateHighScores() {
         function showGame(gameId) {
             document.querySelectorAll('.game').forEach(g => g.classList.add('hidden'));
             document.getElementById(gameId).classList.remove('hidden');
+        if (gameId === 'memory') {
+                startMemoryGame();
         }
-
+        }
         // Tic Tac Toe Logic
         let currentPlayer = 'X';
         let gameBoard = ['', '', '', '', '', '', '', '', ''];
@@ -482,7 +488,7 @@ function updateMemoryHighScore(moves) {
         <h3>Snake</h3>
         <p>High Score: ${highScores.snake}</p>
         <h3>Memory</h3>
-        <p>Best Score: ${highScores.memory || '--'} moves</p>
+        <p>Best Score: ${highScores.memory === Infinity ? '--' : highScores.memory} moves</p>
     `;
     
     localStorage.setItem('tictactoeHighScores', JSON.stringify(highScores.tictactoe));
