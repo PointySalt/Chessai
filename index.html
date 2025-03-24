@@ -40,7 +40,8 @@
     padding: 20px;
     background: rgba(0,0,0,0.3);
     border-radius: 10px;
-    margin-left: 20px;
+    margin-left: auto;
+    order:2;
     backdrop-filter: blur(5px);
 }
 
@@ -159,7 +160,33 @@ select, button {
     margin-top: 10px;
     font-weight: bold;
     }
+.mode-selector {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
 
+.mode-btn {
+    padding: 8px 15px;
+    border-radius: 5px;
+    border: none;
+    background: rgba(255,255,255,0.9);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.mode-btn.active {
+    background: #23d5ab;
+    color: white;
+}
+
+.timer {
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 10px;
+    }
     </style>
 </head>
 <body>
@@ -200,11 +227,18 @@ select, button {
             Snake Game Coming Soon...
         </div>
             <div id="memory" class="game hidden">
+    <div class="mode-selector">
+        <button class="mode-btn active" onclick="setMemoryMode('moves')">Moves Mode</button>
+        <button class="mode-btn" onclick="setMemoryMode('time')">Time Attack</button>
+        <button class="mode-btn" onclick="setMemoryMode('hybrid')">Hybrid Mode</button>
+    </div>
+    <div class="timer hidden" id="timer">Time: 0s</div>
     <div class="memory-controls">
         <button onclick="startMemoryGame()">New Game</button>
         <span class="memory-status" id="memory-status">Moves: 0</span>
     </div>
     <div class="memory-board" id="memory-board"></div>
+            </div>
 </div>
         
     <div id="highscores">
@@ -212,24 +246,101 @@ select, button {
         <div id="highscore-list"></div>
     </div>
     <script>
-// High Score System
-const highScores = {
+        let memoryCards = [];
+let flippedCards = [];
+let moves = 0;
+let matchedPairs = 0;
+let gameMode = 'moves';
+let startTime = 0;
+let timerInterval = null;
+let currentTime = 0;
+//high score
+        const highScores = {
     tictactoe: JSON.parse(localStorage.getItem('tictactoeHighScores')) || { 
         wins: 0, 
         losses: 0
     },
     snake: JSON.parse(localStorage.getItem('snakeHighScores')) || 0,
-    memory: JSON.parse(localStorage.getItem('memoryHighScores')) || Infinity
+    memoryMoves: JSON.parse(localStorage.getItem('memoryMovesHighScores')) || Infinity,
+    memoryTime: JSON.parse(localStorage.getItem('memoryTimeHighScores')) || Infinity,
+    memoryHybrid: JSON.parse(localStorage.getItem('memoryHybridHighScores')) || { moves: Infinity, time: Infinity }
 };
+        // Set Memory Game Mode
+function setMemoryMode(mode) {
+    gameMode = mode;
+    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    const timerEl = document.getElementById('timer');
+    if (mode === 'time' || mode === 'hybrid') {
+        timerEl.classList.remove('hidden');
+    } else {
+        timerEl.classList.add('hidden');
+    }
+    
+    resetMemoryGame();
+}
 
+// Timer Functions
+function startTimer() {
+    startTime = Date.now();
+    currentTime = 0;
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        currentTime = Math.floor((Date.now() - startTime) / 1000);
+        document.getElementById('timer').textContent = `Time: ${currentTime}s`;
+    }, 1000);
+}
+
+function stopTimer() {
+    clearInterval(timerInterval);
+}
+
+// Reset Memory Game
+function resetMemoryGame() {
+    stopTimer();
+    memoryCards = [];
+    flippedCards = [];
+    moves = 0;
+    matchedPairs = 0;
+    document.getElementById('memory-status').textContent = 'Moves: 0';
+    document.getElementById('memory-board').innerHTML = '';
+}
+
+// Update Memory High Scores
+function updateMemoryHighScores() {
+    let shouldUpdate = false;
+    
+    if (gameMode === 'moves') {
+        if (moves < highScores.memoryMoves) {
+            highScores.memoryMoves = moves;
+            shouldUpdate = true;
+        }
+    } 
+    else if (gameMode === 'time') {
+        if (currentTime < highScores.memoryTime) {
+            highScores.memoryTime = currentTime;
+            shouldUpdate = true;
+        }
+    } 
+    else if (gameMode === 'hybrid') {
+        const hybridScore = moves + currentTime;
+        const currentHybridScore = highScores.memoryHybrid.moves + highScores.memoryHybrid.time;
+        
+        if (hybridScore < currentHybridScore) {
+            highScores.memoryHybrid = { moves, time: currentTime };
+            shouldUpdate = true;
+        }
+    }
+    
+    if (shouldUpdate) {
+        updateHighScores();
+    }
+        }
 // Calculate win percentage function
 function calculateWinPercentage(wins, losses) {
     const total = wins + losses;
     return total > 0 ? ((wins / total) * 100).toFixed(1) : 0;
-}
-        
-
-
 function updateHighScores() {
     const highscoreList = document.getElementById('highscore-list');
     highscoreList.innerHTML = `
@@ -240,21 +351,26 @@ function updateHighScores() {
         <h3>Snake</h3>
         <p>High Score: ${highScores.snake}</p>
         <h3>Memory</h3>
-        <p>Best Time: ${highScores.memory}s</p>
+        <p><strong>Moves Mode:</strong> ${highScores.memoryMoves === Infinity ? '--' : highScores.memoryMoves} moves</p>
+        <p><strong>Time Attack:</strong> ${highScores.memoryTime === Infinity ? '--' : highScores.memoryTime}s</p>
+        <p><strong>Hybrid Mode:</strong> ${highScores.memoryHybrid.moves === Infinity ? '--' : highScores.memoryHybrid.moves} moves / ${highScores.memoryHybrid.time === Infinity ? '--' : highScores.memoryHybrid.time}s</p>
     `;
     
     localStorage.setItem('tictactoeHighScores', JSON.stringify(highScores.tictactoe));
     localStorage.setItem('snakeHighScores', JSON.stringify(highScores.snake));
-    localStorage.setItem('memoryHighScores', JSON.stringify(highScores.memory));
+    localStorage.setItem('memoryMovesHighScores', JSON.stringify(highScores.memoryMoves));
+    localStorage.setItem('memoryTimeHighScores', JSON.stringify(highScores.memoryTime));
+    localStorage.setItem('memoryHybridHighScores', JSON.stringify(highScores.memoryHybrid));
 }
-        // Game Selection
-        function showGame(gameId) {
-            document.querySelectorAll('.game').forEach(g => g.classList.add('hidden'));
-            document.getElementById(gameId).classList.remove('hidden');
-        if (gameId === 'memory') {
-                startMemoryGame();
-        }
-        }
+        // Game 
+    function showGame(gameId) {
+    document.querySelectorAll('.game').forEach(g => g.classList.add('hidden'));
+    document.getElementById(gameId).classList.remove('hidden');
+    
+    if (gameId === 'memory') {
+        resetMemoryGame();
+    }
+}
         // Tic Tac Toe Logic
         let currentPlayer = 'X';
         let gameBoard = ['', '', '', '', '', '', '', '', ''];
@@ -429,6 +545,9 @@ function startMemoryGame() {
         tile.addEventListener('click', flipCard);
         board.appendChild(tile);
     });
+    if (gameMode === 'time' || gameMode === 'hybrid') {
+        startTimer();
+    }
 }
 
 function flipCard() {
@@ -451,11 +570,13 @@ function checkForMatch() {
     if (card1.dataset.symbol === card2.dataset.symbol) {
         card1.classList.add('matched');
         card2.classList.add('matched');
-        matchedPairs++;
-        
+        card1.textContent = '?';
+            card2.textContent = '?';
         if (matchedPairs === memoryCards.length / 2) {
+            stopTimer();
             setTimeout(() => {
-                alert(`You won in ${moves} moves!`);
+                updateMemoryHighScores();
+                alert(`You won in ${moves} moves${gameMode !== 'moves' ? ` and ${currentTime} seconds` : ''}!`);
             }, 500);
         }
     } else {
