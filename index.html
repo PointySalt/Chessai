@@ -158,7 +158,33 @@ align-items: center;
     margin-top: 10px;
     font-weight: bold;
     }
+.mode-selector {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
 
+.mode-btn {
+    padding: 8px 15px;
+    border-radius: 5px;
+    border: none;
+    background: rgba(255,255,255,0.9);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.mode-btn.active {
+    background: #23d5ab;
+    color: white;
+}
+
+.timer {
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 10px;
+}
     </style>
 </head>
 <body>
