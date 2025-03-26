@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Hub</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            color: #4fc3f7;
+            animation: bgColorChange 20s infinite;
+            touch-action: manipulation;
+        }
+        
+        @keyframes bgColorChange {
+            0% { background-color: #1e1e2e; }
+            25% { background-color: #2e1e3e; }
+            50% { background-color: #1e2e3e; }
+            75% { background-color: #3e2e1e; }
+            100% { background-color: #1e1e2e; }
+        }
+        
+        #stars-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: twinkle var(--duration) infinite ease-in-out;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
+        
+        #game-container {
+            width: 100%;
+            max-width: 800px;
+            height: 100vh;
+            max-height: 600px;
+            margin: 0 auto;
+            position: relative;
+            border: 4px solid #444;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            background-color: rgba(30, 30, 50, 0.7);
+        }
+        
+        #main-menu, #snake-game, #tic-tac-toe, #memory-game, #settings, #stats {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+        }
+        
+        #main-menu {
+            background-color: rgba(30, 30, 50, 0.7);
+        }
+        
+        #snake-game, #tic-tac-toe, #memory-game, #settings, #stats {
+            display: none;
+            background-color: rgba(20, 20, 40, 0.9);
+        }
+        
+        .title {
+            font-size: clamp(30px, 6vw, 60px);
+            margin-bottom: 20px;
+            color: #4fc3f7;
+            text-shadow: 0 0 10px rgba(79, 195, 247, 0.7);
+            text-align: center;
+            padding: 0 10px;
+        }
+        
+        .btn {
+            width: 80%;
+            max-width: 300px;
+            height: 60px;
+            margin: 10px;
+            background-color: #3949ab;
+            color: white;
+            border: 2px solid white;
+            border-radius: 10px;
+            font-size: clamp(18px, 4vw, 24px);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn:hover {
+            background-color: #5c6bc0;
+            transform: scale(1.05);
+        }
+        
+        .back-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 80px;
+            height: 40px;
+            font-size: 16px;
+            background-color: #d32f2f;
+        }
+        
+        .back-btn:hover {
+            background-color: #f44336;
+        }
+        
+        /* Snake Game Styles */
+        #snake-canvas-container {
+            position: relative;
+            margin: 10px 0;
+        }
+        
+        #snake-canvas {
+            border: 2px solid white;
+            max-width: 100%;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .difficulty-btns {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 10px;
+            gap: 5px;
+        }
+        
+        .difficulty-btn {
+            width: 80px;
+            height: 40px;
+            font-size: 14px;
+        }
+        
+        .active-difficulty {
+            background-color: #43a047;
+        }
+        
+        .game-info {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin: 10px 0;
+        }
+        
+        .score-display, .apples-display {
+            font-size: clamp(16px, 4vw, 20px);
+        }
+        
+        .highscore-display {
+            font-size: clamp(14px, 3vw, 18px);
+            color: #ffeb3b;
+        }
+        
+        .game-status {
+            font-size: clamp(16px, 4vw, 20px);
+            margin: 5px 0;
+            height: 30px;
+            color: #ff5722;
+            text-align: center;
+            padding: 0 10px;
+        }
+        
+        /* Virtual Joystick */
+        #joystick-container {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 100px;
+            height: 100px;
+            display: none;
+            z-index: 10;
+        }
+        
+        #joystick {
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            position: relative;
+        }
+        
+        #joystick-knob {
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            touch-action: none;
+        }
+        
+        /* Mobile Controls Toggle */
+        #mobile-controls-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 150px;
+            height: 40px;
+            font-size: 16px;
+            z-index: 10;
+        }
+        
+        /* Tic Tac Toe Styles */
+        #tic-tac-toe-board {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(60px, 100px));
+            grid-template-rows: repeat(3, minmax(60px, 100px));
+            gap: 5px;
+            margin: 10px 0;
+        }
+        
+        .tile {
+            width: 100%;
+            height: 100%;
+            background-color: #3949ab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(30px, 8vw, 50px);
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        
+        .tile:hover {
+            background-color: #5c6bc0;
+        }
+        
+        #tic-tac-toe-status {
+            font-size: clamp(16px, 4vw, 24px);
+            margin-bottom: 10px;
+            height: 30px;
+            text-align: center;
+            padding: 0 10px;
+        }
+        
+        .ai-difficulty-btns {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 10px;
+            gap: 5px;
+        }
+        
+        .ai-difficulty-btn {
+            width: 100px;
+            height: 40px;
+            font-size: 14px;
+        }
+        
+        /* Memory Game Styles */
+        #memory-board {
+            display: grid;
+            gap: 8px;
+            margin: 10px 0;
+            padding: 0 10px;
+        }
+        
+        .memory-card {
+            width: 60px;
+            height: 60px;
+            background-color: #3949ab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            border-radius: 5px;
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+            position: relative;
+        }
+        
+        .memory-card.flipped {
+            transform: rotateY(180deg);
+        }
+        
+        .memory-card .front, .memory-card .back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+        }
+        
+        .memory-card .front {
+            background-color: #3949ab;
+            color: white;
+        }
+        
+        .memory-card .back {
+            background-color: white;
+            color: #3949ab;
+            transform: rotateY(180deg);
+        }
+        
+        .memory-card.matched {
+            visibility: hidden;
+        }
+        
+        #memory-status {
+            font-size: clamp(16px, 4vw, 24px);
+            margin-bottom: 10px;
+            height: 30px;
+            text-align: center;
+            padding: 0 10px;
+        }
+        
+        /* Settings Styles */
+        .settings-option {
+            margin: 10px 0;
+            font-size: clamp(16px, 4vw, 20px);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            padding: 0 10px;
+        }
+        
+        .settings-option label {
+            margin-right: 10px;
+        }
+        
+        .settings-option select, .settings-option input {
+            padding: 5px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            max-width: 200px;
+        }
+        
+        /* Stats Page Styles */
+        .stats-container {
+            width: 90%;
+            height: 70%;
+            overflow-y: auto;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .stats-section {
+            margin-bottom: 20px;
+        }
+        
+        .stats-section h2 {
+            color: #4fc3f7;
+            border-bottom: 2px solid #4fc3f7;
+            padding-bottom: 5px;
+            font-size: clamp(18px, 4vw, 24px);
+        }
+        
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+            font-size: clamp(14px, 3vw, 16px);
+        }
+        
+        .stats-table th, .stats-table td {
+            padding: 6px 8px;
+            text-align: left;
+            border-bottom: 1px solid #4fc3f7;
+        }
+        
+        .stats-table th {
+            background-color: rgba(79, 195, 247, 0.2);
+        }
+        
+        .highlight {
+            color: #ffeb3b;
+            font-weight: bold;
+        }
+        
+        /* Mobile specific styles */
+        @media (max-width: 600px) {
+            #game-container {
+                border: none;
+                border-radius: 0;
+                max-height: 100vh;
+            }
+            
+            .btn {
+                height: 50px;
+                margin: 8px;
+            }
+            
+            .back-btn {
+                top: 5px;
+                left: 5px;
+                width: 70px;
+                height: 35px;
+                font-size: 14px;
+            }
+            
+            #memory-board {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .memory-card {
+                width: 100%;
+                height: 0;
+                padding-bottom: 100%;
+                position: relative;
+            }
+            
+            .memory-card .front, .memory-card .back {
+                position: absolute;
+                top: 0;
+                left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="stars-container"></div>
+    
+    <div id="game-container">
+        <!-- Main Menu -->
+        <div id="main-menu">
+            <h1 class="title">Game Hub</h1>
+            <button class="btn" id="snake-btn">Snake Game</button>
+            <button class="btn" id="tic-tac-toe-btn">Tic Tac Toe</button>
+            <button class="btn" id="memory-btn">Memory Game</button>
+            <button class="btn" id="settings-btn">Settings</button>
+            <button class="btn" id="stats-btn">Game Statistics</button>
+        </div>
+        
+        <!-- Snake Game -->
+        <div id="snake-game">
+            <h1 class="title">Snake Game</h1>
+            <div class="game-status" id="snake-status">Press any arrow key to start!</div>
+            <div class="difficulty-btns">
+                <button class="difficulty-btn btn active-difficulty" data-difficulty="easy">Easy</button>
+                <button class="difficulty-btn btn" data-difficulty="medium">Medium</button>
+                <button class="difficulty-btn btn" data-difficulty="hard">Hard</button>
+            </div>
+            <div class="game-info">
+                <div class="score-display">Score: <span id="snake-score">0</span></div>
+                <div class="apples-display">Apples: <span id="snake-apples">0</span></div>
+                <div class="highscore-display">High Score: <span id="snake-highscore">0</span></div>
+            </div>
+            <div id="snake-canvas-container">
+                <canvas id="snake-canvas"></canvas>
+            </div>
+            <button class="back-btn btn">Back</button>
+            <div id="joystick-container">
+                <div id="joystick">
+                    <div id="joystick-knob"></div>
+                </div>
+            </div>
+            <button class="btn" id="mobile-controls-toggle">Show Mobile Controls</button>
+        </div>
+        
+        <!-- Tic Tac Toe Game -->
+        <div id="tic-tac-toe">
+            <h1 class="title">Tic Tac Toe</h1>
+            <div class="ai-difficulty-btns">
+                <button class="ai-difficulty-btn btn active-difficulty" data-difficulty="easy">Easy AI</button>
+                <button class="ai-difficulty-btn btn" data-difficulty="medium">Medium AI</button>
+                <button class="ai-difficulty-btn btn" data-difficulty="hard">Hard AI</button>
+            </div>
+            <div id="tic-tac-toe-status">Player X's turn</div>
+            <div id="tic-tac-toe-board">
+                <div class="tile" data-index="0"></div>
+                <div class="tile" data-index="1"></div>
+                <div class="tile" data-index="2"></div>
+                <div class="tile" data-index="3"></div>
+                <div class="tile" data-index="4"></div>
+                <div class="tile" data-index="5"></div>
+                <div class="tile" data-index="6"></div>
+                <div class="tile" data-index="7"></div>
+                <div class="tile" data-index="8"></div>
+            </div>
+            <button class="back-btn btn">Back</button>
+        </div>
+        
+        <!-- Memory Game -->
+        <div id="memory-game">
+            <h1 class="title">Memory Game</h1>
+            <div id="memory-status">Find all matching pairs!</div>
+            <div id="memory-board"></div>
+            <button class="back-btn btn">Back</button>
+        </div>
+        
+        <!-- Settings -->
+        <div id="settings">
+            <h1 class="title">Settings</h1>
+            <div class="settings-option">
+                <label for="memory-theme">Memory Game Theme:</label>
+                <select id="memory-theme">
+                    <option value="emoji">Emojis</option>
+                    <option value="animals">Animals</option>
+                    <option value="fruits">Fruits</option>
+                    <option value="vehicles">Vehicles</option>
+                </select>
+            </div>
+            <div class="settings-option">
+                <label for="memory-size">Memory Game Size:</label>
+                <select id="memory-size">
+                    <option value="4x4">4x4 (8 pairs)</option>
+                    <option value="6x6">6x6 (18 pairs)</option>
+                </select>
+            </div>
+            <div class="settings-option">
+                <label for="enable-joystick">Enable Virtual Joystick:</label>
+                <input type="checkbox" id="enable-joystick">
+            </div>
+            <button class="back-btn btn">Back</button>
+        </div>
+        
+        <!-- Game Statistics -->
+        <div id="stats">
+            <h1 class="title">Game Statistics</h1>
+            <div class="stats-container">
+                <div class="stats-section">
+                    <h2>Snake Game</h2>
+                    <table class="stats-table">
+                        <tr>
+                            <th>Statistic</th>
+                            <th>Value</th>
+                        </tr>
+                        <tr>
+                            <td>High Score</td>
+                            <td id="stats-snake-highscore" class="highlight">0</td>
+                        </tr>
+                        <tr>
+                            <td>Apples Record</td>
+                            <td id="stats-snake-apples">0</td>
+                        </tr>
+                        <tr>
+                            <td>Games Played</td>
+                            <td id="stats-snake-played">0</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="stats-section">
+                    <h2>Tic Tac Toe</h2>
+                    <table class="stats-table">
+                        <tr>
+                            <th>Statistic</th>
+                            <th>Value</th>
+                        </tr>
+                        <tr>
+                            <td>Wins</td>
+                            <td id="stats-ttt-wins">0</td>
+                        </tr>
+                        <tr>
+                            <td>Losses</td>
+                            <td id="stats-ttt-losses">0</td>
+                        </tr>
+                        <tr>
+                            <td>Draws</td>
+                            <td id="stats-ttt-draws">0</td>
+                        </tr>
+                        <tr>
+                            <td>Win Percentage</td>
+                            <td id="stats-ttt-winpercent" class="highlight">0%</td>
+                        </tr>
+                        <tr>
+                            <td>Current Streak</td>
+                            <td id="stats-ttt-streak">0</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="stats-section">
+                    <h2>Memory Game</h2>
+                    <table class="stats-table">
+                        <tr>
+                            <th>Statistic</th>
+                            <th>Value</th>
+                        </tr>
+                        <tr>
+                            <td>Games Played</td>
+                            <td id="stats-memory-played">0</td>
+                        </tr>
+                        <tr>
+                            <td>Best Time</td>
+                            <td id="stats-memory-besttime" class="highlight">-</td>
+                        </tr>
+                        <tr>
+                            <td>Average Time</td>
+                            <td id="stats-memory-avgtime">-</td>
+                        </tr>
+                        <tr>
+                            <td>Fewest Moves</td>
+                            <td id="stats-memory-fewestmoves">-</td>
+                        </tr>
+                        <tr>
+                            <td>Average Moves</td>
+                            <td id="stats-memory-avgmoves">-</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <button class="back-btn btn">Back</button>
+        </div>
+    </div>
+
+    <script>
+        // Starfield background animation
+        function createStarfield() {
+            const container = document.getElementById('stars-container');
+            const starCount = 100;
+            
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                
+                const size = Math.random() * 3;
+                const duration = 2 + Math.random() * 3;
+                
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.setProperty('--duration', `${duration}s`);
+                
+                container.appendChild(star);
+            }
+        }
+        
+        createStarfield();
+
+        // Game state management
+        const mainMenu = document.getElementById('main-menu');
+        const snakeGame = document.getElementById('snake-game');
+        const ticTacToe = document.getElementById('tic-tac-toe');
+        const memoryGame = document.getElementById('memory-game');
+        const settings = document.getElementById('settings');
+        const statsPage = document.getElementById('stats');
+        
+        // Navigation buttons
+        document.getElementById('snake-btn').addEventListener('click', () => {
+            mainMenu.style.display = 'none';
+            snakeGame.style.display = 'flex';
+            initSnakeGame();
+        });
+        
+        document.getElementById('tic-tac-toe-btn').addEventListener('click', () => {
+            mainMenu.style.display = 'none';
+            ticTacToe.style.display = 'flex';
+            initTicTacToe();
+        });
+        
+        document.getElementById('memory-btn').addEventListener('click', () => {
+            mainMenu.style.display = 'none';
+            memoryGame.style.display = 'flex';
+            initMemoryGame();
+        });
+        
+        document.getElementById('settings-btn').addEventListener('click', () => {
+            mainMenu.style.display = 'none';
+            settings.style.display = 'flex';
+        });
+        
+        document.getElementById('stats-btn').addEventListener('click', () => {
+            mainMenu.style.display = 'none';
+            statsPage.style.display = 'flex';
+            updateStatsDisplay();
+        });
+        
+        // Back buttons
+        document.querySelectorAll('.back-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                snakeGame.style.display = 'none';
+                ticTacToe.style.display = 'none';
+                memoryGame.style.display = 'none';
+                settings.style.display = 'none';
+                statsPage.style.display = 'none';
+                mainMenu.style.display = 'flex';
+            });
+        });
+        
+        // Game Statistics System
+        function getGameStats() {
+            const defaultStats = {
+                snake: {
+                    highScore: 0,
+                    applesRecord: 0,
+                    gamesPlayed: 0
+                },
+                tictactoe: {
+                    wins: 0,
+                    losses: 0,
+                    draws: 0,
+                    currentStreak: 0,
+                    bestStreak: 0,
+                    lastResult: null
+                },
+                memory: {
+                    gamesPlayed: 0,
+                    bestTime: null,
+                    totalTime: 0,
+                    fewestMoves: null,
+                    totalMoves: 0,
+                    completedGames: 0
+                }
+            };
+            
+            const stats = JSON.parse(localStorage.getItem('gameStats')) || defaultStats;
+            return {...defaultStats, ...stats};
+        }
+        
+        function saveGameStats(stats) {
+            localStorage.setItem('gameStats', JSON.stringify(stats));
+        }
+        
+        function updateStatsDisplay() {
+            const stats = getGameStats();
+            
+            // Snake stats
+            document.getElementById('stats-snake-highscore').textContent = stats.snake.highScore;
+            document.getElementById('stats-snake-apples').textContent = stats.snake.applesRecord;
+            document.getElementById('stats-snake-played').textContent = stats.snake.gamesPlayed;
+            
+            // Tic Tac Toe stats
+            document.getElementById('stats-ttt-wins').textContent = stats.tictactoe.wins;
+            document.getElementById('stats-ttt-losses').textContent = stats.tictactoe.losses;
+            document.getElementById('stats-ttt-draws').textContent = stats.tictactoe.draws;
+            
+            const totalGames = stats.tictactoe.wins + stats.tictactoe.losses + stats.tictactoe.draws;
+            const winPercentage = totalGames > 0 ? Math.round((stats.tictactoe.wins / totalGames) * 100) : 0;
+            document.getElementById('stats-ttt-winpercent').textContent = `${winPercentage}%`;
+            document.getElementById('stats-ttt-streak').textContent = stats.tictactoe.currentStreak;
+            
+            // Memory game stats
+            document.getElementById('stats-memory-played').textContent = stats.memory.gamesPlayed;
+            
+            if (stats.memory.bestTime !== null) {
+                document.getElementById('stats-memory-besttime').textContent = `${stats.memory.bestTime}s`;
+            }
+            
+            if (stats.memory.completedGames > 0) {
+                document.getElementById('stats-memory-avgtime').textContent = 
+                    `${Math.round(stats.memory.totalTime / stats.memory.completedGames)}s`;
+            }
+            
+            if (stats.memory.fewestMoves !== null) {
+                document.getElementById('stats-memory-fewestmoves').textContent = stats.memory.fewestMoves;
+            }
+            
+            if (stats.memory.gamesPlayed > 0) {
+                document.getElementById('stats-memory-avgmoves').textContent = 
+                    Math.round(stats.memory.totalMoves / stats.memory.gamesPlayed);
+            }
+        }
+        
+        // Snake Game Implementation
+        function initSnakeGame() {
+            const canvas = document.getElementById('snake-canvas');
+            const ctx = canvas.getContext('2d');
+            const scoreDisplay = document.getElementById('snake-score');
+            const applesDisplay = document.getElementById('snake-apples');
+            const highscoreDisplay = document.getElementById('snake-highscore');
+            const statusDisplay = document.getElementById('snake-status');
+            const joystickContainer = document.getElementById('joystick-container');
+            const joystickKnob = document.getElementById('joystick-knob');
+            const mobileControlsToggle = document.getElementById('mobile-controls-toggle');
+            
+            // Load stats
+            const stats = getGameStats();
+            
+            // Load joystick preference
+            const joystickEnabled = localStorage.getItem('enableJoystick') === 'true';
+            if (joystickEnabled) {
+                joystickContainer.style.display = 'block';
+                mobileControlsToggle.textContent = 'Hide Mobile Controls';
+            } else {
+                joystickContainer.style.display = 'none';
+                mobileControlsToggle.textContent = 'Show Mobile Controls';
+            }
+            
+            // Toggle mobile controls
+            mobileControlsToggle.addEventListener('click', () => {
+                if (joystickContainer.style.display === 'none') {
+                    joystickContainer.style.display = 'block';
+                    mobileControlsToggle.textContent = 'Hide Mobile Controls';
+                    localStorage.setItem('enableJoystick', 'true');
+                } else {
+                    joystickContainer.style.display = 'none';
+                    mobileControlsToggle.textContent = 'Show Mobile Controls';
+                    localStorage.setItem('enableJoystick', 'false');
+                }
+            });
+            
+            // Game settings based on difficulty
+            let boxSize = 20; // Fixed snake segment size
+            let speed = 10;
+            let gameAreaMultiplier = 1;
+            
+            // Difficulty buttons
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active-difficulty'));
+                    btn.classList.add('active-difficulty');
+                    
+                    const difficulty = btn.dataset.difficulty;
+                    if (difficulty === 'easy') {
+                        speed = 8;
+                        gameAreaMultiplier = 0.8;
+                    } else if (difficulty === 'medium') {
+                        speed = 12;
+                        gameAreaMultiplier = 1;
+                    } else if (difficulty === 'hard') {
+                        speed = 16;
+                        gameAreaMultiplier = 1.2;
+                    }
+                    
+                    // Restart game with new settings
+                    resetGame();
+                });
+            });
+            
+            // Snake game variables
+            let snake = [];
+            let food = {x: 0, y: 0};
+            let direction = 'RIGHT';
+            let nextDirection = 'RIGHT';
+            let score = 0;
+            let applesEaten = 0;
+            let game;
+            let gameRunning = false;
+            let gameOverState = false;
+            
+            // Set high score display
+            highscoreDisplay.textContent = stats.snake.highScore;
+            
+            // Initialize game
+            resetGame();
+            
+            // Draw functions
+            function drawSnake() {
+                ctx.fillStyle = '#4CAF50';
+                snake.forEach((segment, index) => {
+                    // Make head slightly different color
+                    if (index === 0) {
+                        ctx.fillStyle = '#2E7D32';
+                    } else {
+                        ctx.fillStyle = '#4CAF50';
+                    }
+                    ctx.fillRect(segment.x, segment.y, boxSize, boxSize);
+                    ctx.strokeStyle = '#45a049';
+                    ctx.strokeRect(segment.x, segment.y, boxSize, boxSize);
+                });
+            }
+            
+            function drawFood() {
+                ctx.fillStyle = '#f44336';
+                ctx.beginPath();
+                const radius = boxSize / 2;
+                ctx.arc(food.x + radius, food.y + radius, radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Add shine effect
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.beginPath();
+                ctx.arc(food.x + radius * 0.7, food.y + radius * 0.3, radius * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            function drawGrid() {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 0.5;
+                
+                // Vertical lines
+                for (let i = 0; i <= canvas.width; i += boxSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(i, 0);
+                    ctx.lineTo(i, canvas.height);
+                    ctx.stroke();
+                }
+                
+                // Horizontal lines
+                for (let i = 0; i <= canvas.height; i += boxSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, i);
+                    ctx.lineTo(canvas.width, i);
+                    ctx.stroke();
+                }
+            }
+            
+            // Game logic
+            function moveSnake() {
+                direction = nextDirection;
+                const head = {x: snake[0].x, y: snake[0].y};
+                
+                switch (direction) {
+                    case 'UP': head.y -= boxSize; break;
+                    case 'DOWN': head.y += boxSize; break;
+                    case 'LEFT': head.x -= boxSize; break;
+                    case 'RIGHT': head.x += boxSize; break;
+                }
+                
+                // Check for collisions
+                if (
+                    head.x < 0 || head.x >= canvas.width ||
+                    head.y < 0 || head.y >= canvas.height ||
+                    snake.some(segment => segment.x === head.x && segment.y === head.y)
+                ) {
+                    gameOver();
+                    return;
+                }
+                
+                snake.unshift(head);
+                
+                // Check if snake ate food
+                if (head.x === food.x && head.y === food.y) {
+                    score += 10;
+                    applesEaten++;
+                    
+                    // Update stats
+                    const stats = getGameStats();
+                    if (score > stats.snake.highScore) {
+                        stats.snake.highScore = score;
+                        highscoreDisplay.textContent = score;
+                    }
+                    
+                    if (applesEaten > stats.snake.applesRecord) {
+                        stats.snake.applesRecord = applesEaten;
+                    }
+                    
+                    saveGameStats(stats);
+                    
+                    // Update displays
+                    scoreDisplay.textContent = score;
+                    applesDisplay.textContent = applesEaten;
+                    
+                    // Generate new food
+                    generateFood();
+                } else {
+                    // Remove tail if no food was eaten
+                    snake.pop();
+                }
+            }
+            
+            function generateFood() {
+                const maxPos = Math.floor(canvas.width / boxSize);
+                let newFood;
+                let validPosition = false;
+                
+                while (!validPosition) {
+                    newFood = {
+                        x: Math.floor(Math.random() * maxPos) * boxSize,
+                        y: Math.floor(Math.random() * maxPos) * boxSize
+                    };
+                    
+                    // Check if food position is not on snake
+                    validPosition = !snake.some(segment => 
+                        segment.x === newFood.x && segment.y === newFood.y
+                    );
+                }
+                
+                food = newFood;
+            }
+            
+            function gameOver() {
+                clearInterval(game);
+                gameRunning = false;
+                gameOverState = true;
+                
+                // Update stats
+                const stats = getGameStats();
+                stats.snake.gamesPlayed++;
+                saveGameStats(stats);
+                
+                statusDisplay.textContent = `Game Over! Score: ${score} (Apples: ${applesEaten})`;
+            }
+            
+            function resetGame() {
+                if (game) clearInterval(game);
+                
+                // Set canvas size based on difficulty
+                const baseSize = 400;
+                const gameSize = Math.floor(baseSize * gameAreaMultiplier);
+                canvas.width = gameSize;
+                canvas.height = gameSize;
+                
+                // Reset game state
+                score = 0;
+                applesEaten = 0;
+                
+                // Center the snake
+                const centerX = Math.floor(canvas.width / boxSize / 2) * boxSize;
+                const centerY = Math.floor(canvas.height / boxSize / 2) * boxSize;
+                snake = [{x: centerX, y: centerY}];
+                
+                direction = 'RIGHT';
+                nextDirection = 'RIGHT';
+                gameRunning = false;
+                gameOverState = false;
+                
+                // Generate first food
+                generateFood();
+                
+                // Update displays
+                scoreDisplay.textContent = score;
+                applesDisplay.textContent = applesEaten;
+                statusDisplay.textContent = "Press any arrow key to start!";
+                
+                // Draw initial state
+                drawGame();
+            }
+            
+            function drawGame() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawGrid();
+                drawFood();
+                moveSnake();
+                drawSnake();
+            }
+            
+            // Event listeners for keyboard controls
+            document.addEventListener('keydown', (e) => {
+                if (gameOverState && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                    resetGame();
+                    return;
+                }
+                
+                if (!gameRunning && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                    gameRunning = true;
+                    game = setInterval(drawGame, 1000 / speed);
+                    statusDisplay.textContent = "";
+                }
+                
+                switch (e.key) {
+                    case 'ArrowUp':
+                        if (direction !== 'DOWN') nextDirection = 'UP';
+                        break;
+                    case 'ArrowDown':
+                        if (direction !== 'UP') nextDirection = 'DOWN';
+                        break;
+                    case 'ArrowLeft':
+                        if (direction !== 'RIGHT') nextDirection = 'LEFT';
+                        break;
+                    case 'ArrowRight':
+                        if (direction !== 'LEFT') nextDirection = 'RIGHT';
+                        break;
+                }
+            });
+            
+            // Virtual Joystick
+            let joystickActive = false;
+            let joystickCenter = { x: 0, y: 0 };
+            
+            joystickKnob.addEventListener('mousedown', startJoystick);
+            joystickKnob.addEventListener('touchstart', startJoystick, { passive: false });
+            
+            document.addEventListener('mousemove', moveJoystick);
+            document.addEventListener('touchmove', moveJoystick, { passive: false });
+            
+            document.addEventListener('mouseup', endJoystick);
+            document.addEventListener('touchend', endJoystick);
+            
+            function startJoystick(e) {
+                e.preventDefault();
+                joystickActive = true;
+                const joystickRect = joystickContainer.getBoundingClientRect();
+                joystickCenter = {
+                    x: joystickRect.left + joystickRect.width / 2,
+                    y: joystickRect.top + joystickRect.height / 2
+                };
+                
+                if (gameOverState) {
+                    resetGame();
+                    return;
+                }
+                
+                if (!gameRunning) {
+                    gameRunning = true;
+                    game = setInterval(drawGame, 1000 / speed);
+                    statusDisplay.textContent = "";
+                }
+            }
+            
+            function moveJoystick(e) {
+                if (!joystickActive) return;
+                e.preventDefault();
+                
+                const clientX = e.clientX || e.touches[0].clientX;
+                const clientY = e.clientY || e.touches[0].clientY;
+                
+                // Calculate position relative to joystick center
+                const deltaX = clientX - joystickCenter.x;
+                const deltaY = clientY - joystickCenter.y;
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                const maxDistance = 30;
+                
+                // Limit knob movement
+                const angle = Math.atan2(deltaY, deltaX);
+                const limitedDistance = Math.min(distance, maxDistance);
+                
+                // Position the knob
+                const knobX = Math.cos(angle) * limitedDistance;
+                const knobY = Math.sin(angle) * limitedDistance;
+                
+                joystickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+                
+                // Determine direction based on angle
+                if (!gameRunning) return;
+                
+                if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                    // Horizontal movement
+                    if (deltaX > 0 && direction !== 'LEFT') {
+                        nextDirection = 'RIGHT';
+                    } else if (deltaX < 0 && direction !== 'RIGHT') {
+                        nextDirection = 'LEFT';
+                    }
+                } else {
+                    // Vertical movement
+                    if (deltaY > 0 && direction !== 'UP') {
+                        nextDirection = 'DOWN';
+                    } else if (deltaY < 0 && direction !== 'DOWN') {
+                        nextDirection = 'UP';
+                    }
+                }
+            }
+            
+            function endJoystick() {
+                joystickActive = false;
+                joystickKnob.style.transform = 'translate(0, 0)';
+            }
+        }
+        
+        // Tic Tac Toe Implementation with AI and Stats
+        function initTicTacToe() {
+            const board = document.getElementById('tic-tac-toe-board');
+            const tiles = document.querySelectorAll('#tic-tac-toe-board .tile');
+            const statusDisplay = document.getElementById('tic-tac-toe-status');
+            
+            let gameState = ['', '', '', '', '', '', '', '', ''];
+            let currentPlayer = 'X';
+            let gameActive = true;
+            let aiDifficulty = 'easy'; // Default difficulty
+            
+            // Load stats
+            const stats = getGameStats();
+            
+            // AI difficulty buttons
+            document.querySelectorAll('.ai-difficulty-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.ai-difficulty-btn').forEach(b => b.classList.remove('active-difficulty'));
+                    btn.classList.add('active-difficulty');
+                    aiDifficulty = btn.dataset.difficulty;
+                    resetGame();
+                });
+            });
+            
+            const winningConditions = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+                [0, 4, 8], [2, 4, 6]             // diagonals
+            ];
+            
+            function handleTileClick(e) {
+                const clickedTile = e.target;
+                const clickedTileIndex = parseInt(clickedTile.getAttribute('data-index'));
+                
+                if (gameState[clickedTileIndex] !== '' || !gameActive || currentPlayer === 'O') {
+                    return;
+                }
+                
+                makeMove(clickedTileIndex, 'X');
+                
+                if (gameActive) {
+                    setTimeout(makeAiMove, 500);
+                }
+            }
+            
+            function makeMove(index, player) {
+                gameState[index] = player;
+                tiles[index].textContent = player;
+                checkResult();
+            }
+            
+            function makeAiMove() {
+                if (!gameActive || currentPlayer === 'X') return;
+                
+                let move;
+                
+                switch (aiDifficulty) {
+                    case 'easy':
+                        move = getRandomMove();
+                        break;
+                    case 'medium':
+                        // 50% chance to make a smart move, 50% random
+                        move = Math.random() < 0.5 ? getSmartMove() : getRandomMove();
+                        break;
+                    case 'hard':
+                        move = getSmartMove() || getRandomMove();
+                        break;
+                }
+                
+                if (move !== undefined) {
+                    makeMove(move, 'O');
+                }
+            }
+            
+            function getRandomMove() {
+                const availableMoves = gameState.map((val, idx) => val === '' ? idx : null).filter(val => val !== null);
+                if (availableMoves.length > 0) {
+                    return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+                }
+                return null;
+            }
+            
+            function getSmartMove() {
+                // Check for winning move
+                for (let i = 0; i < winningConditions.length; i++) {
+                    const [a, b, c] = winningConditions[i];
+                    if (gameState[a] === 'O' && gameState[b] === 'O' && gameState[c] === '') return c;
+                    if (gameState[a] === 'O' && gameState[c] === 'O' && gameState[b] === '') return b;
+                    if (gameState[b] === 'O' && gameState[c] === 'O' && gameState[a] === '') return a;
+                }
+                
+                // Block opponent's winning move
+                for (let i = 0; i < winningConditions.length; i++) {
+                    const [a, b, c] = winningConditions[i];
+                    if (gameState[a] === 'X' && gameState[b] === 'X' && gameState[c] === '') return c;
+                    if (gameState[a] === 'X' && gameState[c] === 'X' && gameState[b] === '') return b;
+                    if (gameState[b] === 'X' && gameState[c] === 'X' && gameState[a] === '') return a;
+                }
+                
+                // Try to take center
+                if (gameState[4] === '') return 4;
+                
+                // Try to take a corner
+                const corners = [0, 2, 6, 8];
+                const availableCorners = corners.filter(index => gameState[index] === '');
+                if (availableCorners.length > 0) {
+                    return availableCorners[Math.floor(Math.random() * availableCorners.length)];
+                }
+                
+                // Take any available edge
+                const edges = [1, 3, 5, 7];
+                const availableEdges = edges.filter(index => gameState[index] === '');
+                if (availableEdges.length > 0) {
+                    return availableEdges[Math.floor(Math.random() * availableEdges.length)];
+                }
+                
+                return null;
+            }
+            
+            function checkResult() {
+                let roundWon = false;
+                
+                for (let i = 0; i < winningConditions.length; i++) {
+                    const [a, b, c] = winningConditions[i];
+                    
+                    if (gameState[a] === '' || gameState[b] === '' || gameState[c] === '') {
+                        continue;
+                    }
+                    
+                    if (gameState[a] === gameState[b] && gameState[b] === gameState[c]) {
+                        roundWon = true;
+                        break;
+                    }
+                }
+                
+                if (roundWon) {
+                    const winner = currentPlayer;
+                    statusDisplay.textContent = `Player ${winner} wins!`;
+                    gameActive = false;
+                    
+                    // Update stats
+                    const stats = getGameStats();
+                    if (winner === 'X') {
+                        stats.tictactoe.wins++;
+                        stats.tictactoe.currentStreak++;
+                        if (stats.tictactoe.currentStreak > stats.tictactoe.bestStreak) {
+                            stats.tictactoe.bestStreak = stats.tictactoe.currentStreak;
+                        }
+                    } else {
+                        stats.tictactoe.losses++;
+                        stats.tictactoe.currentStreak = 0;
+                    }
+                    stats.tictactoe.lastResult = winner === 'X' ? 'win' : 'loss';
+                    saveGameStats(stats);
+                    
+                    return;
+                }
+                
+                if (!gameState.includes('')) {
+                    statusDisplay.textContent = "Game ended in a draw!";
+                    gameActive = false;
+                    
+                    // Update stats
+                    const stats = getGameStats();
+                    stats.tictactoe.draws++;
+                    stats.tictactoe.lastResult = 'draw';
+                    saveGameStats(stats);
+                    
+                    return;
+                }
+                
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                statusDisplay.textContent = `Player ${currentPlayer}'s turn`;
+            }
+            
+            function resetGame() {
+                gameState = ['', '', '', '', '', '', '', '', ''];
+                gameActive = true;
+                currentPlayer = 'X';
+                statusDisplay.textContent = `Player ${currentPlayer}'s turn`;
+                tiles.forEach(tile => tile.textContent = '');
+                
+                if (currentPlayer === 'O') {
+                    setTimeout(makeAiMove, 500);
+                }
+            }
+            
+            // Add event listeners
+            tiles.forEach(tile => {
+                tile.addEventListener('click', handleTileClick);
+                tile.textContent = ''; // Clear any existing content
+            });
+            
+            // Initialize game
+            resetGame();
+        }
+        
+        // Memory Game Implementation with Stats
+        function initMemoryGame() {
+            const memoryBoard = document.getElementById('memory-board');
+            const statusDisplay = document.getElementById('memory-status');
+            
+            // Load settings
+            const theme = localStorage.getItem('memoryTheme') || 'emoji';
+            const size = localStorage.getItem('memorySize') || '4x4';
+            
+            // Define themes
+            const themes = {
+                emoji: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼'],
+                animals: ['🦓', '🦒', '🐘', '🦛', '🦘', '🐫', '🦩', '🦚'],
+                fruits: ['🍎', '🍌', '🍒', '🍓', '🍉', '🍍', '🥝', '🥥'],
+                vehicles: ['🚗', '🚕', '🚙', '🚌', '🚑', '🚒', '🚜', '🚲']
+            };
+            
+            // Define sizes
+            const sizes = {
+                '4x4': { pairs: 8, cols: 4, rows: 4 },
+                '6x6': { pairs: 18, cols: 6, rows: 6 }
+            };
+            
+            let cards = [];
+            let flippedCards = [];
+            let matchedCards = [];
+            let lockBoard = false;
+            let moveCount = 0;
+            let gameStartTime;
+            let timer;
+            
+            function createBoard() {
+                memoryBoard.innerHTML = '';
+                
+                // Get selected theme and size
+                const selectedTheme = document.getElementById('memory-theme').value;
+                const selectedSize = document.getElementById('memory-size').value;
+                
+                // Update settings in localStorage
+                localStorage.setItem('memoryTheme', selectedTheme);
+                localStorage.setItem('memorySize', selectedSize);
+                
+                // Get emojis and size config
+                const emojis = themes[selectedTheme].slice(0, sizes[selectedSize].pairs);
+                cards = [...emojis, ...emojis];
+                shuffleCards();
+                
+                // Set up board grid
+                memoryBoard.style.gridTemplateColumns = `repeat(${sizes[selectedSize].cols}, 1fr)`;
+                
+                // Create cards
+                cards.forEach((emoji, index) => {
+                    const card = document.createElement('div');
+                    card.classList.add('memory-card');
+                    card.dataset.index = index;
+                    
+                    const front = document.createElement('div');
+                    front.classList.add('front');
+                    front.textContent = '?';
+                    
+                    const back = document.createElement('div');
+                    back.classList.add('back');
+                    back.textContent = emoji;
+                    
+                    card.appendChild(front);
+                    card.appendChild(back);
+                    
+                    card.addEventListener('click', flipCard);
+                    memoryBoard.appendChild(card);
+                });
+            }
+            
+            function shuffleCards() {
+                for (let i = cards.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [cards[i], cards[j]] = [cards[j], cards[i]];
+                }
+            }
+            
+            function flipCard() {
+                if (lockBoard) return;
+                if (this === flippedCards[0]) return;
+                if (flippedCards.length >= 2) return;
+                
+                // Start timer on first move
+                if (moveCount === 0) {
+                    gameStartTime = Date.now();
+                    startTimer();
+                }
+                
+                moveCount++;
+                this.classList.add('flipped');
+                flippedCards.push(this);
+                
+                if (flippedCards.length === 2) {
+                    checkForMatch();
+                }
+                
+                updateStatus();
+            }
+            
+            function startTimer() {
+                let seconds = 0;
+                timer = setInterval(() => {
+                    seconds++;
+                    updateStatus();
+                }, 1000);
+            }
+            
+            function stopTimer() {
+                if (timer) {
+                    clearInterval(timer);
+                    timer = null;
+                }
+            }
+            
+            function checkForMatch() {
+                const card1 = flippedCards[0];
+                const card2 = flippedCards[1];
+                
+                const emoji1 = card1.querySelector('.back').textContent;
+                const emoji2 = card2.querySelector('.back').textContent;
+                
+                if (emoji1 === emoji2) {
+                    card1.removeEventListener('click', flipCard);
+                    card2.removeEventListener('click', flipCard);
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    matchedCards.push(card1, card2);
+                    
+                    if (matchedCards.length === cards.length) {
+                        gameCompleted();
+                    }
+                    
+                    resetBoard();
+                } else {
+                    lockBoard = true;
+                    setTimeout(() => {
+                        card1.classList.remove('flipped');
+                        card2.classList.remove('flipped');
+                        resetBoard();
+                    }, 1000);
+                }
+            }
+            
+            function gameCompleted() {
+                stopTimer();
+                const gameTime = Math.floor((Date.now() - gameStartTime) / 1000);
+                statusDisplay.textContent = `Congratulations! You won in ${moveCount} moves and ${gameTime} seconds!`;
+                
+                // Update stats
+                const stats = getGameStats();
+                stats.memory.gamesPlayed++;
+                stats.memory.completedGames++;
+                stats.memory.totalMoves += moveCount;
+                stats.memory.totalTime += gameTime;
+                
+                if (stats.memory.bestTime === null || gameTime < stats.memory.bestTime) {
+                    stats.memory.bestTime = gameTime;
+                }
+                
+                if (stats.memory.fewestMoves === null || moveCount < stats.memory.fewestMoves) {
+                    stats.memory.fewestMoves = moveCount;
+                }
+                
+                saveGameStats(stats);
+            }
+            
+            function resetBoard() {
+                [lockBoard, flippedCards] = [false, []];
+                updateStatus();
+            }
+            
+            function updateStatus() {
+                const pairsFound = matchedCards.length / 2;
+                const totalPairs = cards.length / 2;
+                const gameTime = gameStartTime ? Math.floor((Date.now() - gameStartTime) / 1000) : 0;
+                
+                statusDisplay.textContent = `Pairs: ${pairsFound}/${totalPairs} | Moves: ${moveCount} | Time: ${gameTime}s`;
+            }
+            
+            function resetGame() {
+                stopTimer();
+                flippedCards = [];
+                matchedCards = [];
+                lockBoard = false;
+                moveCount = 0;
+                createBoard();
+                statusDisplay.textContent = 'Find all matching pairs!';
+            }
+            
+            // Initialize settings controls
+            document.getElementById('memory-theme').value = localStorage.getItem('memoryTheme') || 'emoji';
+            document.getElementById('memory-size').value = localStorage.getItem('memorySize') || '4x4';
+            document.getElementById('enable-joystick').checked = localStorage.getItem('enableJoystick') === 'true';
+            
+            // Save settings when changed
+            document.getElementById('memory-theme').addEventListener('change', resetGame);
+            document.getElementById('memory-size').addEventListener('change', resetGame);
+            document.getElementById('enable-joystick').addEventListener('change', function() {
+                localStorage.setItem('enableJoystick', this.checked);
+            });
+            
+            // Initialize game
+            resetGame();
+        }
+    </script>
+</body>
+</html>
